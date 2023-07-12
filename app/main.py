@@ -38,6 +38,25 @@ def get_single_game_data(game_code: int):
     return JSONResponse(json.loads(dumps(response, ignore_nan=True)))
 
 
+@app.get("/GameLite")
+def get_single_game_data_lite(game_code: int):
+    teams = db["teams"]
+
+    q = {"game_code": game_code}
+    cols = ["CODETEAM", "OPP","home", "AS", "TO",
+            "2FGM", "2FGA", "2FGR",
+            "3FGM", "3FGA", "3FGR",
+            "FTM", "FTA", "FTR",
+            "D", "DRBEBR", "O", "ORBEBR",
+            "FV","ST", "pos", "PPP"]
+
+    cols_dict = {x: 1 for x in cols}
+    cols_dict["_id"] = 0
+    cursor = teams.find(q, cols_dict)
+    response = list(cursor)
+    return JSONResponse(json.loads(dumps(response, ignore_nan=True)))
+
+
 @app.get("/GamePlayers")
 def get_single_game_players_data(game_code: int):
     players = db["players"]
@@ -68,3 +87,34 @@ def get_single_game_lineup_data(game_code: int):
     cursor = lineups.find(q, {"_id": 0})
     response = list(cursor)
     return JSONResponse(json.loads(dumps(response, ignore_nan=True)))
+
+@app.get("/PointsSingleGame")
+def get_single_game_points_data(game_code: int):
+    points = db["points_agg"]
+
+    q = {"game_code": game_code}
+    cursor = points.find(q, {"_id": 0})
+    response = list(cursor)
+    return JSONResponse(json.loads(dumps(response, ignore_nan=True)))
+
+
+@app.get("/PointsTeam")
+def get_agg_team_points_data(team: str):
+    points = db["points_agg"]
+
+    q = {"TEAM": team}
+    cursor = points.find(q, {"_id": 0})
+    response = list(cursor)
+    return JSONResponse(json.loads(dumps(response, ignore_nan=True)))
+
+
+@app.get("/PointsPlayer")
+def get_agg_player_points_data(player_id: str):
+    points = db["points_agg"]
+
+    q = {"ID_PLAYER": player_id}
+    cursor = points.find(q, {"_id": 0})
+    response = list(cursor)
+    return JSONResponse(json.loads(dumps(response, ignore_nan=True)))
+
+
