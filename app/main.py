@@ -43,12 +43,12 @@ def get_single_game_data_lite(game_code: int):
     teams = db["teams"]
 
     q = {"game_code": game_code}
-    cols = ["CODETEAM", "OPP","home", "AS", "TO",
+    cols = ["CODETEAM", "OPP", "home", "AS", "TO",
             "2FGM", "2FGA", "2FGR",
             "3FGM", "3FGA", "3FGR",
             "FTM", "FTA", "FTR",
             "D", "DRBEBR", "O", "ORBEBR",
-            "FV","ST", "pos", "PPP"]
+            "FV", "ST", "pos", "PPP"]
 
     cols_dict = {x: 1 for x in cols}
     cols_dict["_id"] = 0
@@ -88,6 +88,7 @@ def get_single_game_lineup_data(game_code: int):
     response = list(cursor)
     return JSONResponse(json.loads(dumps(response, ignore_nan=True)))
 
+
 @app.get("/PointsSingleGame")
 def get_single_game_points_data(game_code: int):
     points = db["points_agg"]
@@ -118,3 +119,21 @@ def get_agg_player_points_data(player_id: str):
     return JSONResponse(json.loads(dumps(response, ignore_nan=True)))
 
 
+@app.get("/AssistsSingleGame")
+def get_game_assists(game_code: int):
+    assists = db["assists"]
+
+    q = {"game_code": game_code}
+    cursor = assists.find(q, {"_id": 0})
+    response = list(cursor)
+    return JSONResponse(json.loads(dumps(response, ignore_nan=True)))
+
+
+@app.get("/Quantile")
+def get_quantile(type: str):
+    quantiles = db["quantiles"]
+
+    q = {"type": type}
+    cursor = quantiles.find(q, {"_id": 0})
+    response = list(cursor)
+    return JSONResponse(json.loads(dumps(response, ignore_nan=True)))
