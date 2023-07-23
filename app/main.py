@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from simplejson import dumps
 import json
+import inspect
 
 app = FastAPI()
 client = pymongo.MongoClient("mongodb://root:password@mongo:27017/")
@@ -110,7 +111,8 @@ def get_agg_team_points_data(team: str):
 
 
 @app.get("/PointsPlayer")
-def get_agg_player_points_data(player_id: str):
+def get_agg_player_points_data(player_id: str
+                               ):
     points = db["points_agg"]
 
     q = {"ID_PLAYER": player_id}
@@ -124,6 +126,22 @@ def get_game_assists(game_code: int):
     assists = db["assists"]
 
     q = {"game_code": game_code}
+    cursor = assists.find(q, {"_id": 0})
+    response = list(cursor)
+    return JSONResponse(json.loads(dumps(response, ignore_nan=True)))
+
+
+@app.get("/AssistsPlayer")
+def get_game_assists(player_id: str | None = None,
+                     assisting_player: str | None = None):
+    frame = inspect.currentframe()
+    args, _, _, values = inspect.getargvalues(frame)
+
+    assists = db["assists"]
+    query_params = ["PLAYER_ID", "assisting_player"]
+
+    q = {key: values.get(arg) for key, arg in zip(query_params, args) if values.get(arg)}
+
     cursor = assists.find(q, {"_id": 0})
     response = list(cursor)
     return JSONResponse(json.loads(dumps(response, ignore_nan=True)))
