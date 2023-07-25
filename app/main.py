@@ -1,9 +1,10 @@
 import pymongo
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 from fastapi.responses import JSONResponse
 from simplejson import dumps
 import json
 import inspect
+from typing import List, Optional
 
 app = FastAPI()
 client = pymongo.MongoClient("mongodb://root:password@mongo:27017/")
@@ -19,6 +20,20 @@ def get_single_player(player_id: str):
     return JSONResponse(json.loads(dumps(response, ignore_nan=True)))
 
 
+@app.get("/InitPlayer")
+def get_init_player():
+    players_agg = db["players_agg"]
+
+    q = {}
+    cursor = players_agg.find(q, {"_id": 0,
+                                  "PLAYER_ID": 1,
+                                  "playerName": 1})
+
+    response = list(cursor)
+
+    return JSONResponse(json.loads(dumps(response, ignore_nan=True)))
+
+
 @app.get("/Team")
 def get_single_team(team: str):
     teams_agg = db["teams_agg"]
@@ -30,11 +45,32 @@ def get_single_team(team: str):
 
 
 @app.get("/Game")
-def get_single_game_data(game_code: int):
+def get_single_game_data(game_code: Optional[List[int]] = Query(None),
+                         team: Optional[List[str]] = Query(None)):
+    frame = inspect.currentframe()
+    args, _, _, values = inspect.getargvalues(frame)
+
+    query_params = ["game_code", "CODETEAM"]
+
+    q = {key: {"$in" : values.get(arg)} for key, arg in zip(query_params, args) if values.get(arg)}
+
+    if not team:
+
+        projection = {
+            "_id": 0,
+            "game_code": 1,
+            "CODETEAM": 1,
+            "OPP": 1,
+            "points_scored": 1,
+            "opp_points_scored": 1
+        }
+    else:
+        projection = {"_id": 0}
+
     teams = db["teams"]
 
-    q = {"game_code": game_code}
-    cursor = teams.find(q, {"_id": 0})
+    cursor = teams.find(q, projection)
+
     response = list(cursor)
     return JSONResponse(json.loads(dumps(response, ignore_nan=True)))
 
@@ -59,11 +95,33 @@ def get_single_game_data_lite(game_code: int):
 
 
 @app.get("/GamePlayers")
-def get_single_game_players_data(game_code: int):
+def get_single_game_players_data(game_code: Optional[List[int]] = Query(None),
+                                 player_id: str | None = None):
+    frame = inspect.currentframe()
+    args, _, _, values = inspect.getargvalues(frame)
+
+    query_params = ["game_code", "PLAYER_ID"]
+
+    q = {key: values.get(arg) for key, arg in zip(query_params, args) if values.get(arg)}
+
+    if game_code:
+        q["game_code"] = {"$in": game_code}
+
+    if player_id:
+
+        projection = {"_id":0 ,"PLAYER_ID": 1, "game_code": 1, "pts": 1,
+                      "AS": 1, "REB": 1, "PIR": 1, "PER": 1, "usage": 1,
+                      "2FGM": 1, "2FGA": 1, "3FGA": 1, "3FGM": 1,
+                      "FTM": 1, "FTA": 1, "ST": 1, "FV": 1,
+                      "OREBR": 1, "DREBR": 1, "home": 1,  "duration": 1,
+                      "CODETEAM": 1, "OPP": 1
+                      }
+    else:
+        projection = {"_id": 0}
+
     players = db["players"]
 
-    q = {"game_code": game_code}
-    cursor = players.find(q, {"_id": 0})
+    cursor = players.find(q, projection).sort("game_code", 1)
     response = list(cursor)
     return JSONResponse(json.loads(dumps(response, ignore_nan=True)))
 
@@ -122,7 +180,7 @@ def get_agg_player_points_data(player_id: str
 
 
 @app.get("/AssistsSingleGame")
-def get_game_assists(game_code: int):
+def get_game_assists_single(game_code: int):
     assists = db["assists"]
 
     q = {"game_code": game_code}
@@ -148,10 +206,18 @@ def get_game_assists(player_id: str | None = None,
 
 
 @app.get("/Quantile")
-def get_quantile(type: str):
+def get_quantile(type_quantile: str):
     quantiles = db["quantiles"]
 
-    q = {"type": type}
+    q = {"type": type_quantile}
     cursor = quantiles.find(q, {"_id": 0})
     response = list(cursor)
     return JSONResponse(json.loads(dumps(response, ignore_nan=True)))
+
+
+@app.get("/PlayerGameHistory")
+def get_player_game_history(player_id: str):
+    players = db["players"]
+
+    q = {}
+    pass
