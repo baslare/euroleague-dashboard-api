@@ -52,7 +52,7 @@ def get_single_game_data(game_code: Optional[List[int]] = Query(None),
 
     query_params = ["game_code", "CODETEAM"]
 
-    q = {key: {"$in" : values.get(arg)} for key, arg in zip(query_params, args) if values.get(arg)}
+    q = {key: {"$in": values.get(arg)} for key, arg in zip(query_params, args) if values.get(arg)}
 
     if not team:
 
