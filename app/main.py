@@ -12,11 +12,19 @@ db = client["euroleague_dashboard"]
 
 
 @app.get("/Player")
-def get_single_player(player_id: str):
+def get_single_player(player_id: str | None = None,
+                      team: str | None = None):
+    frame = inspect.currentframe()
+    args, _, _, values = inspect.getargvalues(frame)
+
     players_agg = db["players_agg"]
 
-    q = {"PLAYER_ID": player_id}
-    response = players_agg.find_one(q, {"_id": 0})
+    query_params = ["PLAYER_ID", "CODETEAM"]
+
+    q = {key: values.get(arg) for key, arg in zip(query_params, args) if values.get(arg)}
+
+    cursor = players_agg.find(q, {"_id": 0})
+    response = list(cursor)
     return JSONResponse(json.loads(dumps(response, ignore_nan=True)))
 
 
@@ -41,6 +49,15 @@ def get_single_team(team: str):
     q = {"CODETEAM": team}
     cursor = teams_agg.find_one(q, {"_id": 0})
     response = cursor
+    return JSONResponse(json.loads(dumps(response, ignore_nan=True)))
+
+
+@app.get("/SeasonTeams")
+def get_season_teams():
+    teams_agg = db["teams_agg"]
+    cursor = teams_agg.find({}, {"_id": 0, "CODETEAM": 1, "team_name":1})
+
+    response = list(cursor)
     return JSONResponse(json.loads(dumps(response, ignore_nan=True)))
 
 
@@ -109,11 +126,11 @@ def get_single_game_players_data(game_code: Optional[List[int]] = Query(None),
 
     if player_id:
 
-        projection = {"_id":0 ,"PLAYER_ID": 1, "game_code": 1, "pts": 1,
+        projection = {"_id": 0, "PLAYER_ID": 1, "game_code": 1, "pts": 1,
                       "AS": 1, "REB": 1, "PIR": 1, "PER": 1, "usage": 1,
                       "2FGM": 1, "2FGA": 1, "3FGA": 1, "3FGM": 1,
                       "FTM": 1, "FTA": 1, "ST": 1, "FV": 1,
-                      "OREBR": 1, "DREBR": 1, "home": 1,  "duration": 1,
+                      "OREBR": 1, "DREBR": 1, "home": 1, "duration": 1,
                       "CODETEAM": 1, "OPP": 1
                       }
     else:
