@@ -208,12 +208,13 @@ def get_game_assists_single(game_code: int):
 
 @app.get("/AssistsPlayer")
 def get_game_assists(player_id: str | None = None,
-                     assisting_player: str | None = None):
+                     assisting_player: str | None = None,
+                     team: str | None = None):
     frame = inspect.currentframe()
     args, _, _, values = inspect.getargvalues(frame)
 
     assists = db["assists"]
-    query_params = ["PLAYER_ID", "assisting_player"]
+    query_params = ["PLAYER_ID", "assisting_player", "CODETEAM"]
 
     q = {key: values.get(arg) for key, arg in zip(query_params, args) if values.get(arg)}
 
