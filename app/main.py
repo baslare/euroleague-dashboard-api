@@ -232,10 +232,3 @@ def get_quantile(type_quantile: str):
     response = list(cursor)
     return JSONResponse(json.loads(dumps(response, ignore_nan=True)))
 
-
-@app.get("/PlayerGameHistory")
-def get_player_game_history(player_id: str):
-    players = db["players"]
-
-    q = {}
-    pass
